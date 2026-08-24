@@ -1,0 +1,10 @@
+# Los fixtures del curso se verifican por SHA256: sus bytes no pueden cambiar nunca.
+*.csv            -text
+SHA256SUMS.txt   -text
+*.xlsx           binary
+
+# El resto del repo: LF dentro de git, uniforme para todo el equipo.
+*.py    text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.toml  text eol=lf
