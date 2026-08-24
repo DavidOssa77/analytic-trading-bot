@@ -1,0 +1,16 @@
+# Motor financiero — versiones fijas: los resultados se verifican a 12 decimales
+numpy==2.4.0
+pandas==2.3.3
+scipy==1.16.3
+statsmodels==0.14.6
+
+# Datos — fija: auto_adjust cambio de default entre versiones de yfinance
+yfinance==1.0
+
+# Interfaz — flexibles: no afectan ningun resultado numerico
+streamlit>=1.40
+plotly>=6.5
+matplotlib>=3.10
+
+# Pruebas
+pytest>=8.0
