@@ -1,8 +1,9 @@
 """Estadistica descriptiva y diagnosticos sobre log-rendimientos."""
 
 import numpy as np
-from scipy import stats 
+from scipy import stats
 from statsmodels.stats.diagnostic import acorr_ljungbox, het_arch
+
 
 def log_returns(prices):
     """Log-rendimientos g_t = ln(P_t / P_{t-1}).
@@ -42,15 +43,15 @@ def drawdown(prices):
     return d, d.min()
 
 
-def descriptives(g, m):
-    """Estadistica descriptiva de los log-rendimientos.
+def _core_stats(g, m):
+    """Bloque de estadisticos que se calcula igual para la muestra completa
+    y para la ventana reciente.
+
+    El guion bajo inicial es convencion de Python: marca la funcion como
+    detalle interno del modulo, no parte de su API publica.
 
     g -- Serie de log-rendimientos
-    m -- periodos por anio (252 diaria, 52 semanal, 12 mensual)
-    Devuelve un diccionario con las metricas descriptivas.
-
-    La ventana de cobertura y el porcentaje de faltantes NO se calculan aqui:
-    son propiedades de la serie de precios, que esta funcion no recibe.
+    m -- periodos por año
     """
     mean, var, sd = sample_stats(g)
     mean_annual, sd_annual = annualize(mean, sd, m)
@@ -61,11 +62,38 @@ def descriptives(g, m):
         "sd_period": sd,
         "mean_annual": mean_annual,
         "sd_annual": sd_annual,
+        "median": g.median(),
+        "min": g.min(),
+        "p25": g.quantile(0.25),
+        "p75": g.quantile(0.75),
+        "max": g.max(),
         "q05": g.quantile(0.05),
         "q95": g.quantile(0.95),
         "skew": stats.skew(g, bias=False),
         "kurtosis": stats.kurtosis(g, fisher=True, bias=False),
     }
+
+
+def descriptives(g, m):
+    """Estadistica descriptiva de los log-rendimientos.
+
+    g -- Serie de log-rendimientos
+    m -- periodos por año (252 diaria, 52 semanal, 12 mensual)
+    Devuelve un diccionario con las metricas de la muestra completa, el
+    ultimo rendimiento con su percentil midrank, y un bloque "recent" con
+    las mismas metricas sobre la ventana reciente min(m, T).
+
+    La ventana de cobertura y el porcentaje de faltantes NO se calculan aqui:
+    son propiedades de la serie de precios, que esta funcion no recibe.
+    """
+    window = min(m, len(g))
+    out = _core_stats(g, m)
+    out["last_return"] = g.iloc[-1]
+    out["midrank_pct"] = stats.percentileofscore(g, g.iloc[-1], kind="mean")
+    out["recent"] = _core_stats(g.tail(window), m)
+    out["recent"]["window"] = window
+    out["recent"]["partial"] = len(g) < m
+    return out
 
 
 def diagnostics(g, alpha=0.05, blocks=3):
