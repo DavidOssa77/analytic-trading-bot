@@ -12,5 +12,6 @@ streamlit>=1.40
 plotly>=6.5
 matplotlib>=3.10
 
-# Pruebas
+# Pruebas y exploracion
 pytest>=8.0
+ipykernel>=6.29
