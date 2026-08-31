@@ -27,7 +27,7 @@ def annualize(mean, sd, m):
     """Escala media y desviacion por periodo a base anual.
 
     mean, sd -- estimadores por periodo
-    m        -- periodos por año (252 diaria, 52 semanal, 12 mensual)
+    m -- periodos por año (252 diaria, 52 semanal, 12 mensual)
     Devuelve (media anual, desviacion anual).
     """
     return m * mean, np.sqrt(m) * sd
@@ -45,10 +45,7 @@ def drawdown(prices):
 
 def _core_stats(g, m):
     """Bloque de estadisticos que se calcula igual para la muestra completa
-    y para la ventana reciente.
-
-    El guion bajo inicial es convencion de Python: marca la funcion como
-    detalle interno del modulo, no parte de su API publica.
+    y para la ventana reciente
 
     g -- Serie de log-rendimientos
     m -- periodos por año
@@ -80,11 +77,7 @@ def descriptives(g, m):
     g -- Serie de log-rendimientos
     m -- periodos por año (252 diaria, 52 semanal, 12 mensual)
     Devuelve un diccionario con las metricas de la muestra completa, el
-    ultimo rendimiento con su percentil midrank, y un bloque "recent" con
-    las mismas metricas sobre la ventana reciente min(m, T).
-
-    La ventana de cobertura y el porcentaje de faltantes NO se calculan aqui:
-    son propiedades de la serie de precios, que esta funcion no recibe.
+    ultimo rendimiento con su percentil midrank, y un bloque "recent"
     """
     window = min(m, len(g))
     out = _core_stats(g, m)

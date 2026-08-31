@@ -10,7 +10,7 @@ class Params:
 
     Equivalencia con la guia:
         c_b -> cost_buy      c_s -> cost_sell
-        c   -> confidence    C   -> capital
+        c-> confidence    C-> capital
     """
 
     p_L: float = 0.05
