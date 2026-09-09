@@ -15,12 +15,12 @@ def log_returns(prices):
 
 
 def sample_stats(g):
-    """Media, varianza y desviacion muestrales con ddof=1.
+    """Media y desviacion muestrales con ddof=1.
 
     g -- Serie de log-rendimientos
-    Devuelve (media, varianza, desviacion).
+    Devuelve (media, desviacion)
     """
-    return g.mean(), g.var(ddof=1), g.std(ddof=1)
+    return g.mean(), g.std(ddof=1)
 
 
 def annualize(mean, sd, m):
@@ -50,13 +50,13 @@ def _core_stats(g, m):
     g -- Serie de log-rendimientos
     m -- periodos por año
     """
-    mean, var, sd = sample_stats(g)
+    mean, sd = sample_stats(g)
     mean_annual, sd_annual = annualize(mean, sd, m)
     return {
         "n": len(g),
         "mean_period": mean,
-        "var_period": var,
         "sd_period": sd,
+        "var_period": sd ** 2,
         "mean_annual": mean_annual,
         "sd_annual": sd_annual,
         "median": g.median(),
@@ -92,9 +92,9 @@ def descriptives(g, m):
 def diagnostics(g, alpha=0.05, blocks=3):
     """Cuatro contrastes sobre los supuestos de los log-rendimientos.
 
-    g      -- Serie de log-rendimientos
-    alpha  -- nivel de significancia (la guia fija 0.05)
-    blocks -- bloques cronologicos para Brown-Forsythe (la guia fija 3)
+    g --> Serie de log-rendimientos
+    alpha  --> nivel de significancia (la guia fija 0.05)
+    blocks --> bloques cronologicos para Brown-Forsythe (la guia fija 3)
     Devuelve un diccionario con los parametros usados y, por contraste,
     su estadistico, p-valor y si rechaza.
     """
