@@ -1,6 +1,7 @@
 """Carga, validacion y remuestreo de precios ajustados"""
 
 import pandas as pd
+import yfinance as yf
 
 def load_fixture(path):
     """Carga el fixture del curso y devuelve la matriz de precios.
@@ -10,10 +11,6 @@ def load_fixture(path):
     """
     long_df = pd.read_csv(path, parse_dates=["date"])
     return validate_prices(wide_from_long(long_df))
-
-
-import yfinance as yf
-
 
 def fetch_prices(tickers, start, end):
     """Descarga precios ajustados de yfinance, aislando los fallos
