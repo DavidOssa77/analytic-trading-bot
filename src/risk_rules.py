@@ -99,3 +99,49 @@ def terminal_probs(P_t, P_BE, m, v):
     if P_estrella < P_BE:
         return {"win": 0.0, "lose": 1.0, "neutral": 0.0}
     return {"win": 0.0, "lose": 0.0, "neutral": 1.0}
+
+def signal_gate(niveles, diagnosticos, sufficient, BR_min):
+    """Puerta de senial: decide si el activo pasa y por que
+
+    niveles --> diccionario que devuelve levels
+    diagnosticos --> diccionario que devuelve diagnostics
+    sufficient --> booleano de walk_forward: si hubo historia suficiente
+                   para validar el modelo
+    BR_min --> relacion beneficio-riesgo minima exigida
+
+    Devuelve un diccionario con cuatro claves:
+      signal --> True solo si las siete reglas se cumplen
+      failed --> lista con el texto de las reglas incumplidas; vacia
+                 cuando hay senial. Es lo que se muestra al usuario
+                 para justificar un rechazo
+      warnings --> contrastes que rechazan y, de haberla, la muestra
+                   insuficiente. No bloquean nunca
+      label --> "condicional" si hay advertencias, "incondicional" si no
+    """
+    E, SL, TP = niveles["E"], niveles["SL"], niveles["TP"]
+    P_BE, D_neto, U_neto, BR_neto = (niveles["P_BE"], niveles["D_neto"],
+                                     niveles["U_neto"], niveles["BR_neto"])
+
+    reglas = {
+        "SL < E": SL < E,
+        "E < TP": E < TP,
+        "P_BE >= E": P_BE >= E,
+        "P_BE < TP": P_BE < TP,
+        "D_neto > 0": D_neto > 0,
+        "U_neto > 0": U_neto > 0,
+        "BR_neto >= BR_min": BR_neto is not None and BR_neto >= BR_min,
+    }
+    incumplidas = [nombre for nombre, ok in reglas.items() if not ok]
+
+    advertencias = [nombre for nombre in ("jarque_bera", "ljung_box",
+                                          "brown_forsythe", "arch_lm")
+                    if diagnosticos[nombre]["reject"]]
+    if not sufficient:
+        advertencias.append("muestra insuficiente")
+
+    return {
+        "signal": not incumplidas,
+        "failed": incumplidas,
+        "warnings": advertencias,
+        "label": "condicional" if advertencias else "incondicional",
+    }
