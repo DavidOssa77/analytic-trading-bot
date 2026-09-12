@@ -2,6 +2,7 @@
 
 import pandas as pd
 import yfinance as yf
+PERIODOS_POR_ANIO = {"D": 252, "W-FRI": 52, "ME": 12}
 
 def load_fixture(path):
     """Carga el fixture del curso y devuelve la matriz de precios.
@@ -64,7 +65,6 @@ def wide_from_long(long_df, value_col="adjusted_close"):
     wide = long_df.pivot(index="date", columns="ticker", values=value_col)
     return wide.rename_axis(columns=None)
 
-PERIODOS_POR_ANIO = {"D": 252, "W-FRI": 52, "ME": 12}
 
 def validate_prices(prices):
     """Aplica sobre un DataFrame ancho de precios (fechas x tickers)
