@@ -17,7 +17,7 @@ def price_chart(prices, drawdown, ticker):
     """
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
                         row_heights=[0.7, 0.3], vertical_spacing=0.07,
-                        subplot_titles=("precio ajustado", "caida desde maximos"))
+                        subplot_titles=("precio ajustado", "caida desde maximos (drawdown)"))
 
     fig.add_trace(go.Scatter(x=prices.index, y=prices, name="precio",
                              line=dict(width=1.5)), row=1, col=1)
@@ -130,7 +130,7 @@ def returns_hist(g, ticker, bins=40):
                                name="observados", opacity=0.75,
                                hovertemplate="rendimiento %{x:.2%}"
                                              "<br>densidad %{y:.1f}<extra></extra>"))
-    fig.add_trace(go.Scatter(x=x, y=normal, mode="lines", name="normal ajustada",
+    fig.add_trace(go.Scatter(x=x, y=normal, mode="lines", name="gaussiana",
                              line=dict(width=2), hoverinfo="skip"))
 
     fig.add_vline(x=media, line=dict(width=1, dash="dash", color="gray"),
