@@ -10,8 +10,8 @@
 > ejecuta operaciones ni garantiza resultados.
 
 Herramienta que estima rendimiento y riesgo de un conjunto de activos, comprueba
-si una operación es viable una vez pagadas las comisiones y reporta **qué regla
-incumple** cuando no lo es.
+si una operación es viable una vez pagadas las comisiones y reporta **qué regla incumple** cuando no lo es.
+
 ---
 
 ## Qué hace
