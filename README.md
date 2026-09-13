@@ -151,6 +151,6 @@ Medidas sobre los datos del proyecto y declaradas en la vista *Metodología* de 
 
 ## Equipo
 
-### ** David Ossa, Maria Camila Gaviria, María Arango **
+### David Ossa, Maria Camila Gaviria, María Arango
 
 ### Universidad EIA · 2026
