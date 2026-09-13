@@ -13,6 +13,7 @@ Herramienta que estima rendimiento y riesgo de un conjunto de activos, comprueba
 si una operación es viable una vez pagadas las comisiones y reporta **qué regla
 incumple** cuando no lo es.
 ---
+
 ## Qué hace
 
 Sobre una serie de precios ajustados, para cada activo:
@@ -144,6 +145,7 @@ Medidas sobre los datos del proyecto y declaradas en la vista *Metodología* de 
   2.84 % frente a 5.25 % del cuantil histórico sobre el mismo activo.
 - **El walk-forward usa diez orígenes solapados**, que comparten casi todas sus
   observaciones; la cobertura tiende a salir cerca de 0 o de 1.
+- **La dominancia no es una frontera eficiente de Markowitz.** Compara activos
   individuales: no hay pesos ni matriz de covarianzas.
 - **El perfil de riesgo del usuario no entra en ningún cálculo.**
 
