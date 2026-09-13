@@ -17,6 +17,17 @@ VISTAS = ["Datos", "Resumen", "Precio", "Rendimientos", "Proyeccion",
 VISTAS_ACTIVO = ("Resumen", "Precio", "Rendimientos", "Proyeccion")
 DIAGS = ("jarque_bera", "ljung_box", "brown_forsythe", "arch_lm")
 
+AVISO = (
+    "Esta aplicación fue desarrollada exclusivamente como actividad evaluativa "
+    "del curso Teoría Moderna de Portafolios de Tech Business School - "
+    "Universidad EIA. Sus datos, modelos y resultados tienen fines académicos "
+    "y educativos. En ningún momento constituye asesoría financiera, "
+    "recomendación de inversión ni una herramienta para tomar decisiones de "
+    "inversión en la vida real. Es una herramienta académica que deberá "
+    "revisarse, validarse y ajustarse, y puede contener errores, omisiones, "
+    "rezagos o información incompleta. El sistema no ejecuta operaciones ni "
+    "garantiza resultados.")
+
 st.set_page_config(page_title="Robot analitico", layout="wide")
 
 
@@ -224,6 +235,9 @@ elif vista == "Comparacion":
                    "no cotizo ese dia.")
 
 elif vista == "Metodologia":
+    st.subheader("Aviso")
+    st.warning(AVISO)
+
     st.subheader("Que calcula este robot")
     st.markdown(
         "Preselecciona activos: no recomienda comprar ni vender. Estima "
@@ -283,13 +297,6 @@ elif vista == "Metodologia":
     st.subheader("Origen de los datos")
     st.info(origen)
 
-    st.subheader("Aviso")
-    st.warning(
-        "Herramienta academica con fines educativos. No constituye asesoria "
-        "de inversion ni recomendacion de compra o venta. Los resultados "
-        "dependen por completo de los supuestos declarados arriba, que no se "
-        "cumplen exactamente en los datos reales. Rendimientos pasados no "
-        "garantizan resultados futuros.")
 
 else:
     st.info(f"Vista '{vista}' pendiente.")
