@@ -45,7 +45,7 @@ def descargar(tickers, inicio, fin):
 
 # ---------------------------------------------------------------- sidebar
 st.sidebar.title("Robot analitico")
-vista = st.sidebar.radio("Vista", VISTAS)
+vista = st.sidebar.radio("Vista", VISTAS, index=VISTAS.index("Metodologia"))
 
 st.sidebar.divider()
 fuente = st.sidebar.radio("Fuente", ["Fixture del curso", "Yahoo Finance"])
@@ -159,7 +159,13 @@ elif vista == "Resumen":
     if wf["sufficient"]:
         e1, e2, e3 = st.columns(3)
         e1.metric("Cobertura", f"{wf['coverage']:.2f}",
-                  f"{wf['coverage'] - (params.p_U - params.p_L):+.2f} vs lo prometido")
+                  f"{len(wf['origins'])} origenes solapados",
+                  delta_color="off",
+                  help=f"Proporcion de origenes donde el rendimiento real cayo "
+                       f"dentro de la banda {params.p_L:.0%}-{params.p_U:.0%}. "
+                       "Los origenes son consecutivos, asi que sus ventanas "
+                       "comparten casi todas sus observaciones: la metrica "
+                       "tiende a 0 o a 1 y no mide calibracion.")
         e2.metric("MAE", f"{wf['mae']:.4f}")
         direccion = wf["direction"]
         e3.metric("Direccion",
