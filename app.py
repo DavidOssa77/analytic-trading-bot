@@ -2,6 +2,7 @@
 
 from datetime import date
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -166,12 +167,28 @@ elif vista == "Resumen":
                        "Los origenes son consecutivos, asi que sus ventanas "
                        "comparten casi todas sus observaciones: la metrica "
                        "tiende a 0 o a 1 y no mide calibracion.")
-        e2.metric("MAE", f"{wf['mae']:.4f}")
+        sd_H = np.sqrt(r["v_H"])
+        e2.metric("MAE", f"{wf['mae']:.2%}",
+                  f"{wf['mae'] / sd_H:.2f}x la volatilidad a H",
+                  delta_color="off",
+                  help="Error absoluto medio del pronostico central contra el "
+                       "rendimiento logaritmico acumulado que realmente ocurrio, "
+                       "promediado sobre los origenes.")
         direccion = wf["direction"]
+        n_dir = wf["direction_n"]
         e3.metric("Direccion",
                   f"{direccion:.0%}" if direccion is not None else "n/d",
-                  help="El modelo A no predice direccion: impone mu = 0, "
-                       "asi que no hay signo que acertar.")
+                  f"{round(direccion * n_dir)} de {n_dir} origenes"
+                  if direccion is not None else "el modelo A no tiene deriva",
+                  delta_color="off",
+                  help="Proporcion de origenes donde el pronostico central "
+                       "acerto el signo del rendimiento acumulado. El modelo A "
+                       "impone mu = 0, asi que no hay signo que acertar y la "
+                       "metrica queda sin definir. En el modelo B el pronostico "
+                       "apunta siempre en el sentido de la deriva estimada, asi "
+                       "que la metrica termina midiendo cuantas ventanas se "
+                       "movieron en ese sentido, no la capacidad predictiva del "
+                       "modelo.")
     else:
         st.info(f"Muestra insuficiente: {wf['T']} rendimientos, "
                 f"hacen falta {wf['required']}.")
