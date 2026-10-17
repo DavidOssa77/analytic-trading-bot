@@ -143,3 +143,76 @@ def returns_hist(g, ticker, bins=40):
         yaxis=dict(title="densidad"),
         legend=dict(orientation="h", y=-0.2))
     return fig
+def sml_chart(tabla):
+    """Linea del mercado de valores ex post, una por indice de mercado.
+
+    tabla --> DataFrame de capm.capm_table, con beta, excess_annual,
+              market_excess_annual, alpha_annual y market
+
+    En el eje vertical va el exceso de rendimiento realizado. La recta
+    pasa por el origen (beta 0, exceso 0) y por el mercado (beta 1, su
+    exceso realizado), asi que la distancia vertical de cada activo a su
+    recta es exactamente su alfa de Jensen.
+    """
+    fig = go.Figure()
+    b_max = max(1.2, float(tabla["beta"].max()) * 1.1)
+    b_min = min(0.0, float(tabla["beta"].min()) * 1.1)
+
+    for nombre, sub in tabla.groupby("market"):
+        pendiente = float(sub["market_excess_annual"].iloc[0])
+        xs = np.array([b_min, b_max])
+        fig.add_trace(go.Scatter(x=xs, y=pendiente * xs, mode="lines",
+                                 name=f"LMV {nombre}", hoverinfo="skip",
+                                 line=dict(width=1.5, dash="dash")))
+        fig.add_trace(go.Scatter(
+            x=[1.0], y=[pendiente], mode="markers", name=f"mercado {nombre}",
+            marker=dict(size=14, symbol="diamond-open", line=dict(width=2)),
+            hovertemplate=f"<b>{nombre}</b><br>exceso %{{y:.2%}}<extra></extra>"))
+
+        encima = sub["alpha_annual"] >= 0
+        for parte, rotulo, simbolo in ((sub[encima], "encima (alfa > 0)", "circle"),
+                                       (sub[~encima], "debajo (alfa < 0)", "circle-open")):
+            if parte.empty:
+                continue
+            fig.add_trace(go.Scatter(
+                x=parte["beta"], y=parte["excess_annual"], mode="markers+text",
+                text=parte.index, textposition="top center",
+                textfont=dict(size=10), name=f"{nombre} - {rotulo}",
+                marker=dict(size=11, symbol=simbolo, line=dict(width=1.5)),
+                customdata=parte["alpha_annual"],
+                hovertemplate="<b>%{text}</b><br>beta %{x:.2f}"
+                              "<br>exceso %{y:.2%}<br>alfa %{customdata:.2%}"
+                              "<extra></extra>"))
+
+    fig.add_hline(y=0, line=dict(width=1, color="gray"))
+    fig.update_layout(
+        template=TEMA, height=560,
+        title="Linea del mercado de valores (ex post)",
+        xaxis=dict(title="beta"),
+        yaxis=dict(title="exceso de rendimiento anual", tickformat=".1%"),
+        legend=dict(orientation="h", y=-0.15))
+    return fig
+
+
+def regression_chart(ex, alpha, beta, ticker, mercado):
+    """Dispersion de excesos del activo contra el mercado y recta ajustada.
+
+    ex --> DataFrame de capm.excess_returns
+    alpha, beta --> coeficientes por periodo de la regresion
+    """
+    x = np.linspace(ex["market"].min(), ex["market"].max(), 50)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=ex["market"], y=ex["asset"], mode="markers", name="periodos",
+        marker=dict(size=6, opacity=0.6),
+        hovertemplate="mercado %{x:.2%}<br>activo %{y:.2%}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x, y=alpha + beta * x, mode="lines",
+                             name=f"ajuste: beta = {beta:.2f}",
+                             line=dict(width=2), hoverinfo="skip"))
+    fig.update_layout(
+        template=TEMA, height=460,
+        title=f"{ticker} contra {mercado} - modelo de mercado en excesos",
+        xaxis=dict(title="exceso del mercado", tickformat=".1%"),
+        yaxis=dict(title=f"exceso de {ticker}", tickformat=".1%"),
+        legend=dict(orientation="h", y=-0.2))
+    return fig

@@ -13,6 +13,26 @@ def load_fixture(path):
     long_df = pd.read_csv(path, parse_dates=["date"])
     return validate_prices(wide_from_long(long_df))
 
+def _download(ticker, start, end):
+    """Descarga el cierre ajustado de un simbolo.
+
+    Devuelve (serie, None) si respondio o (None, motivo) si fallo.
+    """
+    try:
+        df = yf.download(ticker, start=start, end=end,
+                         auto_adjust=True, progress=False)
+    except Exception as e:
+        return None, f"fallo la descarga: {e}"
+
+    if df is None or df.empty:
+        return None, "sin datos en el rango pedido"
+
+    s = df["Close"].squeeze()
+    if s.notna().sum() == 0:
+        return None, "todos los precios llegaron vacios"
+    return s, None
+
+
 def fetch_prices(tickers, start, end):
     """Descarga precios ajustados de yfinance, aislando los fallos
 
@@ -28,28 +48,130 @@ def fetch_prices(tickers, start, end):
     series, errores = {}, {}
 
     for t in tickers:
-        try:
-            df = yf.download(t, start=start, end=end,
-                             auto_adjust=True, progress=False)
-        except Exception as e:
-            errores[t] = f"fallo la descarga: {e}"
-            continue 
-
-        if df is None or df.empty:
-            errores[t] = "sin datos en el rango pedido"
-            continue
-
-        s = df["Close"].squeeze()
-        if s.notna().sum() == 0:
-            errores[t] = "todos los precios llegaron vacios"
-            continue
-
-        series[t] = s
+        s, motivo = _download(t, start, end)
+        if motivo:
+            errores[t] = motivo
+        else:
+            series[t] = s
 
     if not series:
         return pd.DataFrame(), errores
 
     return validate_prices(pd.DataFrame(series)), errores
+
+
+# ------------------------------------------------------------- mercado
+# Sufijo de Yahoo --> (moneda, nombre del mercado, indices candidatos).
+# Los candidatos se prueban en orden: si Yahoo no publica el indice, se
+# usa el ETF que lo replica. Londres cotiza en peniques (GBp): el nivel
+# en dolares sale escalado por 100, pero los rendimientos no cambian.
+MERCADOS = {
+    "":    ("USD", "S&P 500",   ["^GSPC"]),
+    ".CL": ("COP", "COLCAP",    ["^COLCAP", "ICOLCAP.CL"]),
+    ".T":  ("JPY", "Nikkei 225", ["^N225"]),
+    ".SA": ("BRL", "Bovespa",   ["^BVSP"]),
+    ".MX": ("MXN", "IPC Mexico", ["^MXX"]),
+    ".SN": ("CLP", "IPSA",      ["^IPSA"]),
+    ".TO": ("CAD", "S&P/TSX",   ["^GSPTSE"]),
+    ".L":  ("GBP", "FTSE 100",  ["^FTSE"]),
+    ".DE": ("EUR", "DAX",       ["^GDAXI"]),
+    ".PA": ("EUR", "CAC 40",    ["^FCHI"]),
+    ".MC": ("EUR", "IBEX 35",   ["^IBEX"]),
+    ".HK": ("HKD", "Hang Seng", ["^HSI"]),
+}
+
+# Bonos del Tesoro de EE.UU.; Yahoo los cotiza en puntos porcentuales
+TASAS = {"13 semanas": ("^IRX", 0.25), "5 anios": ("^FVX", 5),
+         "10 anios": ("^TNX", 10), "30 anios": ("^TYX", 30)}
+
+
+def suffix(ticker):
+    """Sufijo de bolsa del simbolo de Yahoo ('' para EE.UU.)."""
+    if ticker.startswith("^") or "." not in ticker:
+        return ""
+    s = "." + ticker.rsplit(".", 1)[1]
+    return s if s in MERCADOS else ""
+
+
+def market_info(ticker):
+    """(moneda, nombre del mercado, indices candidatos) del activo."""
+    return MERCADOS[suffix(ticker)]
+
+
+def fetch_market(names, start, end):
+    """Descarga el indice de cada mercado pedido, probando sus candidatos.
+
+    names --> nombres de mercado (los de MERCADOS)
+    Devuelve (indices, errores):
+      indices --> dict {nombre: (simbolo usado, Serie de precios)}
+      errores --> dict {nombre: motivo}
+    """
+    por_nombre = {v[1]: v[2] for v in MERCADOS.values()}
+    indices, errores = {}, {}
+    for n in names:
+        motivos = []
+        for cand in por_nombre[n]:
+            s, motivo = _download(cand, start, end)
+            if motivo is None:
+                indices[n] = (cand, validate_prices(s.to_frame(cand))[cand])
+                break
+            motivos.append(f"{cand}: {motivo}")
+        else:
+            errores[n] = "; ".join(motivos)
+    return indices, errores
+
+
+def tenor_for(H, m):
+    """Plazo del bono mas cercano al horizonte de inversion H/m anios."""
+    anios = H / m
+    return min(TASAS, key=lambda k: abs(TASAS[k][1] - anios))
+
+
+def fetch_rate(tenor, start, end):
+    """Rendimiento anual del bono del Tesoro, en decimales.
+
+    tenor --> clave de TASAS
+    Devuelve (Serie, None) o (None, motivo). No pasa por validate_prices:
+    una tasa en cero es un dato valido, no un faltante.
+    """
+    s, motivo = _download(TASAS[tenor][0], start, end)
+    if motivo:
+        return None, motivo
+    return (s / 100).sort_index().ffill(), None
+
+
+def fetch_fx(currencies, start, end):
+    """Tipo de cambio de cada moneda contra el dolar.
+
+    Yahoo cotiza 'XXX=X' como unidades de XXX por un dolar.
+    Devuelve (DataFrame ancho por moneda, errores).
+    """
+    series, errores = {}, {}
+    for c in sorted(set(currencies) - {"USD"}):
+        s, motivo = _download(f"{c}=X", start, end)
+        if motivo:
+            errores[c] = motivo
+        else:
+            series[c] = s
+    fx = validate_prices(pd.DataFrame(series)) if series else pd.DataFrame()
+    return fx, errores
+
+
+def to_usd(prices, currency, fx):
+    """Expresa una serie de precios en dolares.
+
+    prices --> Serie de precios en moneda local
+    currency --> moneda de la serie
+    fx --> DataFrame de fetch_fx
+
+    Se usa el ultimo tipo de cambio disponible en cada fecha de precio,
+    porque las bolsas y el mercado cambiario no comparten calendario.
+    """
+    if currency == "USD":
+        return prices
+    tc = fx[currency].reindex(prices.index, method="ffill")
+    return (prices / tc).dropna()
+
 
 def wide_from_long(long_df, value_col="adjusted_close"):
     """Convierte un DataFrame largo a uno ancho (fechas x tickers)

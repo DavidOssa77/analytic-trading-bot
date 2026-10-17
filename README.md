@@ -31,6 +31,22 @@ Sobre una serie de precios ajustados, para cada activo:
 Y sobre el conjunto: descarta los activos dominados en el plano
 media-volatilidad y señala el de mejor razón retorno-volatilidad.
 
+### CAPM
+
+Para cada activo estima el modelo de mercado en excesos,
+`R_i - rf = α + β (R_m - rf) + ε`, sobre rendimientos simples semanales:
+
+- **Mercado por país**: S&P 500 para tickers de EE. UU., COLCAP para `.CL`,
+  Nikkei 225 para `.T`, etc. Con el fixture, un proxy equiponderado.
+- **Todo en USD**: activos e índices extranjeros se convierten con el tipo de
+  cambio de Yahoo (`COP=X`, `JPY=X`...).
+- **Tasa libre de riesgo**: bonos del Tesoro de EE. UU. (`^IRX`, `^FVX`,
+  `^TNX`, `^TYX`). Los excesos usan la letra a 13 semanas; el rendimiento
+  requerido, el plazo más cercano al horizonte o el que elija el usuario.
+- **Salidas**: β cruda y ajustada de Blume, α de Jensen con p-valor, R²,
+  riesgo sistemático vs. idiosincrático, rendimiento requerido, Sharpe,
+  Treynor y la Línea del Mercado de Valores.
+
 ---
 
 ## Estructura
@@ -43,6 +59,7 @@ src/                  motor financiero — no conoce la interfaz
   forecasting.py      modelos A y B, trayectoria, walk-forward
   risk_rules.py       VaR, niveles con costos, probabilidades, puerta de señal
   compare.py          coordenadas históricas y dominancia
+  capm.py             beta, alfa de Jensen, rendimiento requerido, desempeño
   pipeline.py         orquestador: encadena el motor sobre un activo
 charts.py             figuras de Plotly
 app.py                interfaz Streamlit
@@ -92,8 +109,8 @@ Para abrir la app ejecutar lo siguiente en consola:
 .venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-- Siete vistas: datos, resumen, precio, rendimientos, proyección, comparación y
-metodología. 
+- Ocho vistas: datos, resumen, precio, rendimientos, proyección, comparación,
+CAPM y metodología. 
 - Los parámetros: fuente, frecuencia, horizonte, modelo, comisiones,razón beneficio-riesgo mínima, confianza y capital, se ajustan desde el panel lateral y recalculan todo al instante.
 
 ### Los cuadernos
@@ -147,6 +164,9 @@ Medidas sobre los datos del proyecto y declaradas en la vista *Metodología* de 
   observaciones; la cobertura tiende a salir cerca de 0 o de 1.
 - **La dominancia no es una frontera eficiente de Markowitz.** Compara activos
   individuales: no hay pesos ni matriz de covarianzas.
+- **El CAPM se estima con historia.** La β cambia en el tiempo y el α
+  realizado no predice el futuro. Ningún índice es el portafolio de mercado
+  teórico (crítica de Roll).
 - **El perfil de riesgo del usuario no entra en ningún cálculo.**
 
 ---
