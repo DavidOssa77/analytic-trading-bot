@@ -61,13 +61,24 @@ src/                  motor financiero — no conoce la interfaz
   compare.py          coordenadas históricas y dominancia
   capm.py             beta, alfa de Jensen, rendimiento requerido, desempeño
   pipeline.py         orquestador: encadena el motor sobre un activo
-charts.py             figuras de Plotly
-app.py                interfaz Streamlit
+app.py                punto de entrada: panel lateral común, carga de datos
+app/                  interfaz — solo dibuja, no calcula
+  contexto.py         estado común de las vistas y descargas cacheadas
+  charts.py           figuras de Plotly
+  vistas/             una ventana por archivo
+    __init__.py       registro y orden del menú
+    comun.py          selector de activo compartido
+    datos.py, resumen.py, precio.py, rendimientos.py,
+    proyeccion.py, comparacion.py, capm.py, metodologia.py
 notebooks/            cuadernos de verificación
 ```
 
 La separación es estricta: **`src/` nunca importa Streamlit ni Plotly**. El
 motor se puede ejecutar entero desde un notebook, sin necesidad de la interfaz.
+
+Para agregar una ventana se crea `app/vistas/<nombre>.py` con una función
+`render(ctx)` —y `controles(fuente)` si necesita parámetros propios en el
+panel— y se registra en `app/vistas/__init__.py`.
 
 ---
 
